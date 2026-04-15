@@ -1,0 +1,6 @@
+graft src/pipui/static
+global-exclude *.pyc
+global-exclude *.pyo
+global-exclude *.so
+global-exclude *.egg-info
+global-exclude *.egg
