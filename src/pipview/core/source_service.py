@@ -5,7 +5,7 @@ import os
 from pathlib import Path
 from typing import Optional
 
-from pipui.common.logger import get_logger
+from pipview.common.logger import get_logger
 
 logger = get_logger()
 

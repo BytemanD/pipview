@@ -1,5 +1,5 @@
 [project]
-name = "pipui"
+name = "pipview"
 version = "0.1.0"
 description = "A modern web-based pip package manager dashboard"
 readme = "README.md"
@@ -45,4 +45,4 @@ asyncio_mode = "auto"
 testpaths = ["tests"]
 
 [tool.hatch.scripts]
-build-frontend = "pipui.scripts:build_frontend"
+build-frontend = "pipview.scripts:build_frontend"

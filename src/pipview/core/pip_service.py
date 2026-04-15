@@ -5,10 +5,8 @@ import sys
 from importlib.metadata import PackageNotFoundError, distribution, distributions
 from typing import Optional
 
-from pipui.common.http import http_get
-from pipui.common.logger import get_logger
-
-logger = get_logger()
+from pipview.common.http import http_get
+from pipview.common.logger import get_logger
 
 logger = get_logger()
 

@@ -8,7 +8,7 @@ from typing import Any
 
 from loguru import logger
 
-from pipui.common.config import CONF
+from pipview.common.config import CONF
 
 trace_id_var: ContextVar[str] = ContextVar("trace_id", default="")
 
@@ -40,7 +40,7 @@ def setup_log() -> None:
         colorize=True,
     )
 
-    log_file_path = log_dir / f"pipui-{datetime.now().strftime('%Y-%m-%d')}.log"
+    log_file_path = log_dir / f"pipview-{datetime.now().strftime('%Y-%m-%d')}.log"
     logger.add(
         log_file_path,
         format=log_format.format,

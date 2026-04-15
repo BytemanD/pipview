@@ -2,8 +2,8 @@
 
 from fastapi import APIRouter, HTTPException, Query
 
-from pipui.core.pip_service import package_service
-from pipui.core.schemas import (
+from pipview.core.pip_service import package_service
+from pipview.core.schemas import (
     InstallRequest,
     PackageInfo,
     TaskResponse,

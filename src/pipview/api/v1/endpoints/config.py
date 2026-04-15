@@ -7,7 +7,7 @@ from typing import Optional
 
 from fastapi import APIRouter
 
-from pipui.common.config import CONF
+from pipview.common.config import CONF
 
 router = APIRouter()
 

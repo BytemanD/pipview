@@ -10,9 +10,9 @@ from fastapi.staticfiles import StaticFiles
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import FileResponse, JSONResponse
 
-from pipui.api.v1.router import api_router
-from pipui.common.config import CONF
-from pipui.common.logger import get_logger, trace_id_var
+from pipview.api.v1.router import api_router
+from pipview.common.config import CONF
+from pipview.common.logger import get_logger, trace_id_var
 
 logger = get_logger()
 
@@ -32,9 +32,9 @@ class TraceIDMiddleware(BaseHTTPMiddleware):
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """应用生命周期管理"""
-    logger.info("Starting PipUI application...")
+    logger.info("Starting PipView application...")
     yield
-    logger.info("Shutting down PipUI application...")
+    logger.info("Shutting down PipView application...")
 
 
 app = FastAPI(
@@ -94,14 +94,14 @@ async def root():
     index_file = static_dir / "index.html"
     if index_file.exists():
         return FileResponse(str(index_file))
-    return {"message": "PipUI API", "version": CONF.app.version}
+    return {"message": "PipView API", "version": CONF.app.version}
 
 
 if __name__ == "__main__":
     import uvicorn
 
     uvicorn.run(
-        "pipui.main:app",
+        "pipview.main:app",
         host=CONF.app.host,
         port=CONF.app.port,
         reload=True,

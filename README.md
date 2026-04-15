@@ -1,4 +1,4 @@
-# PipUI
+# PipView
 
 一个现代化的 Python pip 包管理 Web 面板。
 
@@ -22,14 +22,14 @@
 ### 安装依赖
 
 ```bash
-cd pipui
+cd pipview
 uv sync
 ```
 
 ### 启动服务
 
 ```bash
-uv run python -m pipui.main
+uv run python -m pipview.main
 ```
 
 服务启动后，访问 http://localhost:8000
@@ -39,7 +39,7 @@ uv run python -m pipui.main
 ```bash
 # 启用调试模式
 export APP_DEBUG=true
-uv run python -m pipui.main
+uv run python -m pipview.main
 ```
 
 ## 配置说明
@@ -63,8 +63,8 @@ uv run python -m pipui.main
 ## 项目结构
 
 ```
-pipui/
-├── src/pipui/
+pipview/
+├── src/pipview/
 │   ├── api/v1/          # API 路由
 │   │   └── endpoints/  # API 端点
 │   ├── common/         # 公共模块

@@ -5,8 +5,8 @@ from typing import Optional
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from pipui.core.source_service import source_service
-from pipui.core.schemas import SourceInfo, SourceListResponse
+from pipview.core.source_service import source_service
+from pipview.core.schemas import SourceInfo, SourceListResponse
 
 router = APIRouter()
 

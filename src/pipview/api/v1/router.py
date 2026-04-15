@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter
 
-from pipui.api.v1.endpoints import packages, sources, config
+from pipview.api.v1.endpoints import packages, sources, config
 
 api_router = APIRouter()
 

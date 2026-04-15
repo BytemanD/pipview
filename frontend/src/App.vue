@@ -6,7 +6,7 @@
           <v-icon size="32" color="primary">mdi-package-variant</v-icon>
         </template>
         <v-list-item-title class="text-h6 font-weight-bold">
-          Pip<span class="text-primary">UI</span>
+          Pip<span class="text-primary">View</span>
         </v-list-item-title>
       </v-list-item>
 

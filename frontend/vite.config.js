@@ -22,7 +22,7 @@ export default defineConfig({
     }
   },
   build: {
-    outDir: '../src/pipui/static',
+    outDir: '../src/pipview/static',
     emptyOutDir: true
   }
 })

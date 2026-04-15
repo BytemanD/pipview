@@ -9,7 +9,7 @@ class AppSettings(BaseSettings):
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
-    name: str = "pipui"
+    name: str = "pipview"
     version: str = "0.1.0"
     debug: bool = False
     host: str = "0.0.0.0"

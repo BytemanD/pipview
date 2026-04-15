@@ -1,4 +1,4 @@
-graft src/pipui/static
+graft src/pipview/static
 global-exclude *.pyc
 global-exclude *.pyo
 global-exclude *.so
