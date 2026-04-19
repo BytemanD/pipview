@@ -73,22 +73,15 @@ async def global_exception_handler(request: Request, exc: Exception):
 
 app.include_router(api_router, prefix="/api/v1")
 
-frontend_dir = Path(__file__).parent.parent.parent / "frontend"
-dist_dir = frontend_dir / "dist"
 
-if dist_dir.exists():
-    app.mount("/", StaticFiles(directory=str(dist_dir), html=True), name="frontend")
-else:
-    static_dir = Path(__file__).parent / "static"
-    if static_dir.exists():
-        app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
-
+static_dir = Path(__file__).parent / "static"
+app.mount("/assets", StaticFiles(directory=str(static_dir.joinpath("assets"))), name="assets")
 
 @app.get("/")
 async def root():
     """根路径 - 返回前端页面"""
-    if dist_dir.exists():
-        index_file = dist_dir / "index.html"
+    if static_dir.exists():
+        index_file = static_dir / "index.html"
         if index_file.exists():
             return FileResponse(str(index_file))
     index_file = static_dir / "index.html"

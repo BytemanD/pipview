@@ -8,7 +8,7 @@ from pydantic import BaseModel
 from pipview.core.source_service import source_service
 from pipview.core.schemas import SourceInfo, SourceListResponse
 
-router = APIRouter()
+router = APIRouter(prefix="/sources", tags=["sources"])
 
 
 class SetSourceRequest(BaseModel):

@@ -9,7 +9,7 @@ from fastapi import APIRouter
 
 from pipview.common.config import CONF
 
-router = APIRouter()
+router = APIRouter(prefix="/config", tags=["config"])
 
 
 @router.get("")

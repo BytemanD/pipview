@@ -11,7 +11,7 @@ from pipview.core.schemas import (
     UpgradeRequest,
 )
 
-router = APIRouter()
+router = APIRouter(prefix="/packages", tags=["packages"])
 
 
 @router.get("/list")
