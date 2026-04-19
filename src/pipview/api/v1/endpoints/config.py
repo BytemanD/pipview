@@ -9,7 +9,21 @@ from fastapi import APIRouter
 
 from pipview.common.config import CONF
 
-router = APIRouter(prefix="/config", tags=["config"])
+router = APIRouter(prefix="/configs", tags=["configs"])
+
+
+def read_pip_config() -> Optional[str]:
+    """读取 pip 配置文件原始内容"""
+    if os.name == "nt":
+        pip_dir = Path(os.environ.get("APPDATA", "")) / "pip"
+    else:
+        pip_dir = Path.home() / ".config" / "pip"
+
+    pip_config_file = pip_dir / "pip.ini"
+
+    if pip_config_file.exists():
+        return pip_config_file.read_text(encoding="utf-8")
+    return None
 
 
 @router.get("")
@@ -29,20 +43,6 @@ async def get_config():
             "retention_days": CONF.log.log_retention_days,
         },
     }
-
-
-def read_pip_config() -> Optional[str]:
-    """读取 pip 配置文件原始内容"""
-    if os.name == "nt":
-        pip_dir = Path(os.environ.get("APPDATA", "")) / "pip"
-    else:
-        pip_dir = Path.home() / ".config" / "pip"
-
-    pip_config_file = pip_dir / "pip.ini"
-
-    if pip_config_file.exists():
-        return pip_config_file.read_text(encoding="utf-8")
-    return None
 
 
 @router.get("/pip")

@@ -270,7 +270,7 @@ const upgrade = async (pkg) => {
 
 const upgradeAll = async () => {
   loading.value = true
-  const res = await packagesApi.upgrade()
+  const res = await packagesApi.upgradeAll()
   if (res?.status === 'success') {
     showToast('升级成功')
     loadPackages()

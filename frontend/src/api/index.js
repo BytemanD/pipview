@@ -15,74 +15,80 @@ async function apiCall(url, options = {}) {
 
 export const packagesApi = {
   list: (search = '') =>
-    apiCall(`/packages/list?page=1&page_size=10000&search=${search}`),
+    apiCall(`/packages?search=${search}`),
 
   install: (packageName, version = '', upgrade = false) =>
-    apiCall('/packages/install', {
+    apiCall('/packages', {
       method: 'POST',
       body: JSON.stringify({ package_name: packageName, version, upgrade })
     }),
 
   uninstall: (packageName) =>
-    apiCall('/packages/uninstall', {
-      method: 'POST',
-      body: JSON.stringify({ package_name: packageName })
+    apiCall(`/packages/${packageName}`, {
+      method: 'DELETE'
     }),
 
-  upgrade: (packageName = null) =>
-    apiCall('/packages/upgrade', {
-      method: 'POST',
-      body: JSON.stringify(packageName ? { package_name: packageName } : { all: true })
+  upgrade: (packageName) =>
+    apiCall(`/packages/${packageName}`, {
+      method: 'PUT'
+    }),
+
+  upgradeAll: () =>
+    apiCall('/packages/upgrade-all', {
+      method: 'PUT'
     }),
 
   downgrade: (packageName, version) =>
-    apiCall('/packages/downgrade', {
-      method: 'POST',
-      body: JSON.stringify({ package_name: packageName, version })
+    apiCall(`/packages/${packageName}/version?version=${version}`, {
+      method: 'PUT'
     }),
 
   versions: (packageName) =>
-    apiCall(`/packages/versions/${packageName}`),
+    apiCall(`/packages/${packageName}/versions`),
 
   latestVersion: (packageName) =>
     apiCall(`/packages/search?q=${packageName}`),
 
   checkConflicts: () =>
-    apiCall('/packages/check-conflicts'),
+    apiCall('/packages/conflicts'),
 
   checkUpdates: () =>
-    apiCall('/packages/check-updates')
+    apiCall('/packages/updates')
 }
 
 export const sourcesApi = {
-  list: () => apiCall('/sources/list'),
+  list: () => apiCall('/sources'),
+
+  defaults: () => apiCall('/sources/defaults'),
+
+  current: () => apiCall('/sources/current'),
 
   add: (name, url) =>
-    apiCall('/sources/add', {
+    apiCall('/sources', {
       method: 'POST',
       body: JSON.stringify({ name, url })
     }),
 
   remove: (url) =>
-    apiCall('/sources/remove', {
-      method: 'POST',
-      body: JSON.stringify({ url })
+    apiCall(`/sources/${encodeURIComponent(url)}`, {
+      method: 'DELETE'
     }),
 
   set: (sourceUrl, extraSources = null) =>
-    apiCall('/sources/set', {
-      method: 'POST',
+    apiCall('/sources/current', {
+      method: 'PUT',
       body: JSON.stringify({ source_url: sourceUrl, extra_sources: extraSources })
     }),
 
   reset: () =>
-    apiCall('/sources/reset', { method: 'POST' })
+    apiCall('/sources/current', { method: 'DELETE' })
 }
 
 export const configApi = {
-  pip: () => apiCall('/config/pip'),
-  env: () => apiCall('/config/env'),
-  pythonVersion: () => apiCall('/config/python-version')
+  get: () => apiCall('/configs'),
+  pip: () => apiCall('/configs/pip'),
+  env: () => apiCall('/configs/env'),
+  pythonVersion: () => apiCall('/configs/python-version')
 }
 
 export default { packagesApi, sourcesApi, configApi }
