@@ -18,17 +18,9 @@
       <v-card-title class="d-flex align-center flex-wrap ga-3">
         <span>已安装的包</span>
         <v-chip size="small" variant="outlined">{{ statsTotal }}</v-chip>
-        <v-text-field
-          v-model="search"
-          prepend-inner-icon="mdi-magnify"
-          label="搜索包名"
-          density="compact"
-          variant="outlined"
-          hide-details
-          class="flex-grow-1"
-          style="max-width: 500px"
-          @update:model-value="debounceSearch"
-        ></v-text-field>
+        <v-text-field v-model="search" prepend-inner-icon="mdi-magnify" label="搜索包名" density="compact"
+          variant="outlined" hide-details class="flex-grow-1" style="max-width: 500px"
+          @update:model-value="debounceSearch"></v-text-field>
         <v-spacer></v-spacer>
         <v-btn color="primary" @click="showInstallDialog = true">
           <v-icon start>mdi-plus</v-icon>
@@ -46,24 +38,20 @@
         </v-btn>
       </v-card-title>
 
-      <v-data-table
-        :headers="headers"
-        :items="filteredPackages"
-        :items-per-page="20"
-        density="compact"
-        class="elevation-0"
-        :loading="loading"
-        v-model:page="page"
-      >
+      <v-data-table :headers="headers" :items="filteredPackages" :items-per-page="20" density="compact"
+        class="elevation-0" :loading="loading" v-model:page="page">
         <template v-slot:item.name="{ item }">
-          <span class="text-primary font-weight-medium">{{ item.name }}</span>
+          <span class="text-primary font-weight-medium cursor-pointer" @click.stop="showPackageDetail(item)">{{
+            item.name }}</span>
         </template>
         <template v-slot:item.version="{ item }">
           <v-chip size="small" variant="tonal">{{ item.version }}</v-chip>
         </template>
         <template v-slot:item.latest_version="{ item }">
-          <v-progress-circular v-if="checkingPackage === item.name" indeterminate size="16" width="2" color="primary"></v-progress-circular>
-          <v-chip v-else-if="item.latest_version && item.latest_version !== item.version" size="small" color="success" variant="flat">
+          <v-progress-circular v-if="checkingPackage === item.name" indeterminate size="16" width="2"
+            color="primary"></v-progress-circular>
+          <v-chip v-else-if="item.latest_version && item.latest_version !== item.version" size="small" color="success"
+            variant="flat">
             {{ item.latest_version }}
           </v-chip>
           <span v-else class="text-medium-emphasis">-</span>
@@ -75,7 +63,8 @@
           <v-btn size="x-small" color="success" variant="tonal" class="mr-1" @click="upgrade(item)" :disabled="loading">
             升级
           </v-btn>
-          <v-btn size="x-small" color="warning" variant="tonal" class="mr-1" @click="showVersionDialog(item)" :disabled="loading">
+          <v-btn size="x-small" color="warning" variant="tonal" class="mr-1" @click="showVersionDialog(item)"
+            :disabled="loading">
             降级
           </v-btn>
           <v-btn size="x-small" color="error" variant="tonal" @click="confirmUninstall(item)" :disabled="loading">
@@ -84,13 +73,14 @@
         </template>
       </v-data-table>
 
-      </v-card>
+    </v-card>
 
-    <v-dialog v-model="showInstallDialog" max-width="500">
+    <v-dialog v-model="showInstallDialog" max-width="500" scrollable>
       <v-card>
         <v-card-title>安装包</v-card-title>
         <v-card-text>
-          <v-text-field v-model="installForm.name" label="包名" placeholder="如 requests" variant="outlined"></v-text-field>
+          <v-text-field v-model="installForm.name" label="包名" placeholder="如 requests"
+            variant="outlined"></v-text-field>
           <v-text-field v-model="installForm.version" label="版本 (可选)" variant="outlined"></v-text-field>
           <v-checkbox v-model="installForm.upgrade" label="升级已存在的包"></v-checkbox>
         </v-card-text>
@@ -107,18 +97,77 @@
         <v-card-title>选择版本</v-card-title>
         <v-card-text>
           <div class="mb-3">当前版本: <strong>{{ currentPackage?.version }}</strong></div>
-          <v-select
-            v-model="selectedVersion"
-            :items="availableVersions"
-            label="选择要降级的版本"
-            variant="outlined"
-          ></v-select>
+          <v-select v-model="selectedVersion" :items="availableVersions" label="选择要降级的版本" variant="outlined"></v-select>
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn variant="text" @click="showVersionDialogFlag = false">取消</v-btn>
           <v-btn color="warning" @click="confirmDowngrade" :disabled="loading">降级</v-btn>
         </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <v-dialog v-model="showDetailDialog" max-width="900" scrollable>
+      <v-card :title="packageDetail?.name" :subtitle="packageDetail?.summary">
+        <v-divider></v-divider>
+        <v-card-text v-if="detailLoading" class="pa-0">
+          <v-skeleton-loader type="article"></v-skeleton-loader>
+        </v-card-text>
+        <v-card-text v-else-if="packageDetail">
+          <v-list density="compact">
+            <v-list-item>
+              <v-row no-gutters>
+                <v-col cols="4">
+                  <div class="text-primary">版本</div>
+                  <div class="text-body-2">{{ packageDetail.version || '-' }}</div>
+                </v-col>
+                <v-col cols="4" v-if="packageDetail.author">
+                  <div class="text-primary">作者</div>
+                  <div class="text-body-2">{{ packageDetail.author }}</div>
+                </v-col>
+                <v-col cols="4" v-else>
+                  <div class="text-primary">作者</div>
+                  <div class="text-body-2">-</div>
+                </v-col>
+                <v-col cols="4" v-if="packageDetail.license">
+                  <div class="text-primary">许可证</div>
+                  <div class="text-body-2">{{ packageDetail.license }}</div>
+                </v-col>
+                <v-col cols="4" v-else>
+                  <div class="text-primary">许可证</div>
+                  <div class="text-body-2">-</div>
+                </v-col>
+              </v-row>
+            </v-list-item>
+            <v-list-item v-if="packageDetail.home - page">
+              <v-list-item-title class="text-primary">主页</v-list-item-title>
+              <v-list-item-subtitle>
+                <a :href="packageDetail.home - page" target="_blank" class="text-primary">{{ packageDetail.home - page
+                  }}</a>
+              </v-list-item-subtitle>
+            </v-list-item>
+            <v-list-item v-if="packageDetail.requires - python">
+              <v-list-item-title class="text-primary">Python 版本要求</v-list-item-title>
+              <v-list-item-subtitle>{{ packageDetail.requires_python }}</v-list-item-subtitle>
+            </v-list-item>
+            <v-list-item v-if="packageDetail.keywords">
+              <v-list-item-title class="text-primary">关键词</v-list-item-title>
+              <v-list-item-subtitle>{{ packageDetail.keywords }}</v-list-item-subtitle>
+            </v-list-item>
+            <v-list-item v-if="packageDetail.classifiers && packageDetail.classifiers.length">
+              <v-list-item-title class="text-primary">分类</v-list-item-title>
+              <div class="mt-2">
+                <v-chip v-for="c in packageDetail.classifiers" :key="c" size="x-small" class="mr-1 mb-1">{{ c
+                  }}</v-chip>
+              </div>
+            </v-list-item>
+            <v-list-item v-if="packageDetail.description">
+              <v-list-item-title class="text-primary">描述</v-list-item-title>
+              <v-card-text class="pa-2 text-caption" style="white-space: pre-wrap;">{{ packageDetail.description
+                }}</v-card-text>
+            </v-list-item>
+          </v-list>
+        </v-card-text>
       </v-card>
     </v-dialog>
 
@@ -141,7 +190,8 @@
           依赖冲突
         </v-card-title>
         <v-card-text>
-          <pre class="bg-red-lighten-5 pa-4 rounded" style="white-space: pre-wrap; max-height: 400px; overflow: auto;">{{ conflictOutput }}</pre>
+          <pre class="bg-red-lighten-5 pa-4 rounded" style="white-space: pre-wrap; max-height: 400px; overflow: auto;">{{
+        conflictOutput }}</pre>
         </v-card-text>
       </v-card>
     </v-dialog>
@@ -188,6 +238,10 @@ const selectedVersion = ref('')
 
 const showUninstallDialog = ref(false)
 const uninstallTarget = ref(null)
+
+const showDetailDialog = ref(false)
+const detailLoading = ref(false)
+const packageDetail = ref(null)
 
 const showConflictDialog = ref(false)
 const checkingUpdates = ref(false)
@@ -330,6 +384,20 @@ const confirmDowngrade = async () => {
     showToast(res?.message || '降级失败', 'error')
   }
   loading.value = false
+}
+
+const showPackageDetail = async (pkg) => {
+  packageDetail.value = null
+  showDetailDialog.value = true
+  detailLoading.value = true
+  const res = await packagesApi.get(pkg.name)
+  if (res) {
+    packageDetail.value = res
+  } else {
+    showToast('获取包详情失败', 'error')
+    showDetailDialog.value = false
+  }
+  detailLoading.value = false
 }
 
 const confirmUninstall = (pkg) => {

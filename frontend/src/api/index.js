@@ -17,6 +17,9 @@ export const packagesApi = {
   list: (search = '') =>
     apiCall(`/packages?search=${search}`),
 
+  get: (packageName) =>
+    apiCall(`/packages/${packageName}`),
+
   install: (packageName, version = '', upgrade = false) =>
     apiCall('/packages', {
       method: 'POST',
