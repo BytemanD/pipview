@@ -13,6 +13,7 @@ dependencies = [
     "python-dotenv>=1.0.0",
     "httpx>=0.28.0",
     "hatchling>=1.29.0",
+    "annotated-doc>=0.0.4",
 ]
 
 [project.optional-dependencies]
@@ -23,6 +24,9 @@ dev = [
     "mypy>=1.14.0",
     "httpx>=0.28.0",
 ]
+
+[project.scripts]
+pipview = "pipview.server:main"
 
 [tool.uv]
 index-url = "https://mirrors.aliyun.com/pypi/simple/"
