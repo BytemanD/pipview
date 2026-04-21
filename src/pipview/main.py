@@ -1,13 +1,10 @@
 """应用主入口"""
 
-from pipview.common.config import CONF
+from pipview import server
 
 if __name__ == "__main__":
-    import uvicorn
-
-    uvicorn.run(
-        "pipview.server:app",
-        host=CONF.app.host,
-        port=CONF.app.port,
+    server.run(
+        _app="pipview.server:app",
         reload=True,
     )
+

@@ -91,7 +91,25 @@ export const configApi = {
   get: () => apiCall('/configs'),
   pip: () => apiCall('/configs/pip'),
   env: () => apiCall('/configs/env'),
-  pythonVersion: () => apiCall('/configs/python-version')
+  pythonVersion: () => apiCall('/configs/python-version'),
+  pipVersion: () => apiCall('/configs/pip-version'),
+  installPip: () => apiCall('/configs/install-pip', { method: 'POST' })
 }
 
-export default { packagesApi, sourcesApi, configApi }
+export const tasksApi = {
+  list: (status = '', limit = 50) =>
+    apiCall(`/tasks?status=${status}&limit=${limit}`),
+
+  active: () => apiCall('/tasks/active'),
+
+  get: (taskId) =>
+    apiCall(`/tasks/${taskId}`),
+
+  output: (taskId) =>
+    apiCall(`/tasks/${taskId}/output`),
+
+  cancel: (taskId) =>
+    apiCall(`/tasks/${taskId}`, { method: 'DELETE' })
+}
+
+export default { packagesApi, sourcesApi, configApi, tasksApi }

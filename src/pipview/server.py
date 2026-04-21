@@ -1,9 +1,11 @@
 """应用主入口"""
 
 import os
+import platform
 import uuid
 from contextlib import asynccontextmanager
 from pathlib import Path
+from typing import Optional
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -16,6 +18,8 @@ from pipview.common.config import CONF
 from pipview.common.logger import get_logger, trace_id_var
 
 logger = get_logger()
+
+OPEN_BROWSER = False
 
 
 class TraceIDMiddleware(BaseHTTPMiddleware):
@@ -33,9 +37,8 @@ class TraceIDMiddleware(BaseHTTPMiddleware):
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """应用生命周期管理"""
-    logger.info("Starting PipView application...")
-    import platform
-    if 'windows' in platform.system().lower():
+    logger.info("Starting PipView application... OPEN_BROWSER={}", OPEN_BROWSER)
+    if OPEN_BROWSER and "windows" in platform.system().lower():
         os.system(f"start http://127.0.0.1:{CONF.app.port}")
     yield
     logger.info("Shutting down PipView application...")
@@ -95,15 +98,18 @@ async def root():
     return {"message": "PipView API", "version": CONF.app.version}
 
 
-def main():
+def run(_app: Optional[str] = None, reload=False):
+    global OPEN_BROWSER
     import uvicorn
 
+    OPEN_BROWSER = not reload
     uvicorn.run(
-        app,
+        _app or app,
         host=CONF.app.host,
         port=CONF.app.port,
+        reload=reload,
     )
 
 
 if __name__ == "__main__":
-    main()
+    run()

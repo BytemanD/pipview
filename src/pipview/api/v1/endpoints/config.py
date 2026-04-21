@@ -71,3 +71,32 @@ async def get_env():
 async def get_python_version():
     """获取 Python 版本"""
     return {"version": sys.version}
+
+
+@router.get("/pip-version")
+async def get_pip_version():
+    """获取 pip 版本"""
+    try:
+        import pip
+        return {"version": pip.__version__, "installed": True}
+    except ImportError:
+        return {"version": None, "installed": False}
+
+
+@router.post("/install-pip")
+async def install_pip():
+    """安装 pip (使用 ensurepip)"""
+    import subprocess
+
+    try:
+        p = subprocess.run(
+            [sys.executable, "-m", "ensurepip", "--upgrade"],
+            capture_output=True,
+            text=True,
+        )
+        if p.returncode == 0:
+            import pip
+            return {"success": True, "version": pip.__version__}
+        return {"success": False, "output": p.stdout + p.stderr}
+    except Exception as e:
+        return {"success": False, "output": str(e)}

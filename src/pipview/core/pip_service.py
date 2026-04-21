@@ -26,7 +26,7 @@ class PackageService:
                     pkg_info = {
                         "name": name,
                         "version": dist.version,
-                        "author": dist.metadata.get("Author", ""),
+                        "summary": dist.metadata.get("Summary", ""),
                     }
                     all_packages.append(pkg_info)
                 except Exception as e:
@@ -97,8 +97,6 @@ class PackageService:
 
         if upgrade:
             args.append("--upgrade")
-        else:
-            args.append("-y")
 
         if version:
             args.append(f"{package_name}=={version}")

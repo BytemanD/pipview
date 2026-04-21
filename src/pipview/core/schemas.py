@@ -112,3 +112,26 @@ class SourceConfig(BaseModel):
     url: str
     timeout: int = 60
     trusted_host: bool = False
+
+
+class TaskInfo(BaseModel):
+    """任务信息"""
+
+    task_id: str
+    name: str
+    status: str
+    created_at: str
+    started_at: Optional[str] = None
+    finished_at: Optional[str] = None
+    progress: int = 0
+    message: str = ""
+    output: Optional[str] = None
+    package_name: Optional[str] = None
+    task_type: str = "install"
+
+
+class TaskListResponse(BaseModel):
+    """任务列表响应"""
+
+    total: int
+    tasks: list[TaskInfo]

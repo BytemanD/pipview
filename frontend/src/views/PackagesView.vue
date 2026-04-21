@@ -1,14 +1,19 @@
 <template>
   <div>
     <v-row class="mb-4">
-      <v-col cols="3" v-for="stat in statCards" :key="stat.label">
+      <v-col cols="2" v-for="stat in statCards" :key="stat.label">
         <v-card class="pa-3" :class="{ 'cursor-pointer': stat.clickable }" @click="stat.onClick && stat.onClick()">
-          <div class="d-flex align-center">
-            <v-icon :color="stat.color" size="24" class="mr-3">{{ stat.icon }}</v-icon>
-            <div>
-              <div class="text-body-2 text-medium-emphasis">{{ stat.label }}</div>
-              <div class="text-h6 font-weight-bold">{{ stat.value }}</div>
+          <div class="d-flex align-center justify-space-between">
+            <div class="d-flex align-center flex-grow-1">
+              <v-icon :color="stat.color" size="24" class="mr-3">{{ stat.icon }}</v-icon>
+              <div>
+                <div class="text-body-2 text-medium-emphasis">{{ stat.label }}</div>
+                <div class="text-h6 font-weight-bold">{{ stat.label === 'pip' && !pipInstalled ? '未安装' : stat.value }}</div>
+              </div>
             </div>
+            <v-btn v-if="stat.label === 'pip' && !pipInstalled" color="warning" variant="text" size="x-small" @click.stop="installPip" :loading="installingPip">
+              安装
+            </v-btn>
           </div>
         </v-card>
       </v-col>
@@ -36,6 +41,10 @@
           <v-icon start>mdi-refresh</v-icon>
           检查更新
         </v-btn>
+        <v-btn color="secondary" @click="exportPackages">
+          <v-icon start>mdi-export</v-icon>
+          导出
+        </v-btn>
       </v-card-title>
 
       <v-data-table :headers="headers" :items="filteredPackages" :items-per-page="20" density="compact"
@@ -56,8 +65,8 @@
           </v-chip>
           <span v-else class="text-medium-emphasis">-</span>
         </template>
-        <template v-slot:item.author="{ item }">
-          <span class="text-medium-emphasis">{{ item.author || '-' }}</span>
+        <template v-slot:item.summary="{ item }">
+          <span class="text-medium-emphasis text-truncate" style="max-width: 300px;">{{ item.summary || '-' }}</span>
         </template>
         <template v-slot:item.actions="{ item }">
           <v-btn size="x-small" color="success" variant="tonal" class="mr-1" @click="upgrade(item)" :disabled="loading">
@@ -208,7 +217,7 @@ const headers = [
   { title: '包名', key: 'name' },
   { title: '版本', key: 'version' },
   { title: '最新版本', key: 'latest_version' },
-  { title: '作者', key: 'author' },
+  { title: '简介', key: 'summary' },
   { title: '操作', key: 'actions', sortable: false }
 ]
 
@@ -248,8 +257,12 @@ const checkingUpdates = ref(false)
 const checkingPackage = ref('')
 
 const pythonVersion = ref('')
+const pipVersion = ref('')
+const pipInstalled = ref(true)
+const installingPip = ref(false)
 
 const statCards = computed(() => [
+  { label: 'pip', value: pipInstalled.value ? (pipVersion.value || '-') : '未安装', icon: 'mdi-toolbox', color: pipInstalled.value ? 'primary' : 'error' },
   { label: '已安装包', value: statsTotal.value, icon: 'mdi-package-variant', color: 'primary' },
   { label: '可升级', value: statsUpgradable.value, icon: 'mdi-check-circle', color: 'success' },
   { label: 'Python 版本', value: pythonVersion.value || '-', icon: 'mdi-language-python', color: 'info' },
@@ -267,12 +280,17 @@ const debounceSearch = () => {
 
 const loadPackages = async () => {
   loading.value = true
-  const [pyRes, listRes] = await Promise.all([
+  const [pyRes, pipRes, listRes] = await Promise.all([
     configApi.pythonVersion(),
+    configApi.pipVersion(),
     packagesApi.list()
   ])
   if (pyRes?.version) {
     pythonVersion.value = pyRes.version.split(' ')[0]
+  }
+  if (pipRes) {
+    pipVersion.value = pipRes.version || ''
+    pipInstalled.value = pipRes.installed !== false
   }
   if (listRes) {
     allPackages.value = listRes.packages || []
@@ -298,9 +316,8 @@ const install = async () => {
   loading.value = true
   showInstallDialog.value = false
   const res = await packagesApi.install(installForm.name, installForm.version, installForm.upgrade)
-  if (res?.status === 'success') {
-    showToast('安装成功')
-    loadPackages()
+  if (res?.task_id) {
+    showToast(`安装任务已创建: ${installForm.name}`)
   } else {
     showToast(res?.message || '安装失败', 'error')
   }
@@ -313,9 +330,8 @@ const install = async () => {
 const upgrade = async (pkg) => {
   loading.value = true
   const res = await packagesApi.upgrade(pkg.name)
-  if (res?.status === 'success') {
-    showToast('升级成功')
-    loadPackages()
+  if (res?.task_id) {
+    showToast(`升级任务已创建: ${pkg.name}`)
   } else {
     showToast(res?.message || '升级失败', 'error')
   }
@@ -325,9 +341,8 @@ const upgrade = async (pkg) => {
 const upgradeAll = async () => {
   loading.value = true
   const res = await packagesApi.upgradeAll()
-  if (res?.status === 'success') {
-    showToast('升级成功')
-    loadPackages()
+  if (res?.task_id) {
+    showToast('升级任务已创建')
   } else {
     showToast(res?.message || '升级失败', 'error')
   }
@@ -377,9 +392,8 @@ const confirmDowngrade = async () => {
   loading.value = true
   showVersionDialogFlag.value = false
   const res = await packagesApi.downgrade(currentPackage.value.name, selectedVersion.value)
-  if (res?.status === 'success') {
-    showToast('降级成功')
-    loadPackages()
+  if (res?.task_id) {
+    showToast(`降级任务已创建: ${currentPackage.value.name}`)
   } else {
     showToast(res?.message || '降级失败', 'error')
   }
@@ -409,13 +423,43 @@ const uninstall = async () => {
   loading.value = true
   showUninstallDialog.value = false
   const res = await packagesApi.uninstall(uninstallTarget.value.name)
-  if (res?.status === 'success') {
-    showToast('卸载成功')
-    loadPackages()
+  if (res?.task_id) {
+    showToast(`卸载任务已创建: ${uninstallTarget.value.name}`)
   } else {
     showToast(res?.message || '卸载失败', 'error')
   }
   loading.value = false
+}
+
+const exportPackages = () => {
+  const lines = allPackages.value.map(pkg => {
+    if (pkg.version) {
+      return `${pkg.name}==${pkg.version}`
+    }
+    return pkg.name
+  })
+  const content = lines.join('\n')
+  const blob = new Blob([content], { type: 'text/plain' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = 'requirements.txt'
+  a.click()
+  URL.revokeObjectURL(url)
+  showToast('已导出包列表')
+}
+
+const installPip = async () => {
+  installingPip.value = true
+  const res = await configApi.installPip()
+  if (res?.success) {
+    pipVersion.value = res.version
+    pipInstalled.value = true
+    showToast(`pip ${res.version} 安装成功`)
+  } else {
+    showToast(res?.output || '安装失败', 'error')
+  }
+  installingPip.value = false
 }
 
 onMounted(loadPackages)
