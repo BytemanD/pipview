@@ -1,18 +1,24 @@
 <template>
   <div>
     <v-row class="mb-4">
-      <v-col cols="2" v-for="stat in statCards" :key="stat.label">
+      <v-col cols="6" sm="3" v-for="stat in statCards" :key="stat.label">
         <v-card class="pa-3" :class="{ 'cursor-pointer': stat.clickable }" @click="stat.onClick && stat.onClick()">
           <div class="d-flex align-center justify-space-between">
             <div class="d-flex align-center flex-grow-1">
               <v-icon :color="stat.color" size="24" class="mr-3">{{ stat.icon }}</v-icon>
               <div>
                 <div class="text-body-2 text-medium-emphasis">{{ stat.label }}</div>
-                <div class="text-h6 font-weight-bold">{{ stat.label === 'pip' && !pipInstalled ? '未安装' : stat.value }}</div>
+                <div class="text-h6 font-weight-bold">{{ stat.label === 'pip' && !pipInstalled ? '未安装' : stat.value }}
+                </div>
               </div>
             </div>
-            <v-btn v-if="stat.label === 'pip' && !pipInstalled" color="warning" variant="text" size="x-small" @click.stop="installPip" :loading="installingPip">
+            <v-btn v-if="stat.label === 'pip' && !pipInstalled" color="warning" variant="text" size="small"
+              @click.stop="installPip" :loading="installingPip">
               安装
+            </v-btn>
+            <v-btn v-if="stat.label === 'pip' && pipInstalled" color="warning" variant="text" size="small"
+              @click.stop="installPip" :loading="installingPip">
+              清理缓存
             </v-btn>
           </div>
         </v-card>
@@ -21,34 +27,44 @@
 
     <v-card>
       <v-card-title class="d-flex align-center flex-wrap ga-3">
-        <span>已安装的包</span>
-        <v-chip size="small" variant="outlined">{{ statsTotal }}</v-chip>
-        <v-text-field v-model="search" prepend-inner-icon="mdi-magnify" label="搜索包名" density="compact"
-          variant="outlined" hide-details class="flex-grow-1" style="max-width: 500px"
-          @update:model-value="debounceSearch"></v-text-field>
+        <v-badge color="purple" location="top right" :offset-x="-4" :offset-y="-4" :content="statsTotal">
+          <span>已安装的包</span>
+        </v-badge>
         <v-spacer></v-spacer>
-        <v-btn color="primary" @click="showInstallDialog = true">
-          <v-icon start>mdi-plus</v-icon>
-          安装包
+
+        <v-text-field v-model="search" prepend-inner-icon="mdi-magnify" label="搜索包名" density="compact"
+          variant="outlined" hide-details @update:model-value="debounceSearch"></v-text-field>
+        <!-- <v-spacer></v-spacer> -->
+         <v-divider vertical opacity=".4" gradient></v-divider>
+        <v-btn icon size="small" color="primary" @click="showInstallDialog = true">
+          <v-icon size="small">mdi-plus</v-icon>
         </v-btn>
-        <v-btn color="success" @click="upgradeAll" :disabled="loading">
-          <span class="text-white">
-            <v-icon start>mdi-arrow-up-bold</v-icon>
-            升级全部
-          </span>
-        </v-btn>
+        <!-- <v-btn color="success" @click="upgradeAll" :disabled="loading" prepend-icon="mdi-arrow-up-bold">
+          升级全部
+        </v-btn> -->
         <v-btn color="info" @click="checkUpdates" :disabled="checkingUpdates || loading">
           <v-icon start>mdi-refresh</v-icon>
           检查更新
         </v-btn>
-        <v-btn color="secondary" @click="exportPackages">
-          <v-icon start>mdi-export</v-icon>
-          导出
+        <!-- <v-btn color="warning" @click="clearCache" :loading="clearingCache">
+          <span class="text-white">
+            <v-icon start>mdi-broom</v-icon>
+            清理缓存
+          </span>
+        </v-btn> -->
+        <v-btn color="error" variant="tonal" @click="confirmBatchUninstall" :disabled="selectedPackages.length == 0">
+          卸载
+        </v-btn>
+        <v-btn color="secondary" variant="text" @click="exportPackages">
+          <span>
+            <v-icon start>mdi-export</v-icon>
+            导出
+          </span>
         </v-btn>
       </v-card-title>
 
-      <v-data-table :headers="headers" :items="filteredPackages" :items-per-page="20" density="compact"
-        class="elevation-0" :loading="loading" v-model:page="page">
+      <v-data-table v-model="selectedPackages" show-select :headers="headers" :items="filteredPackages"
+        :items-per-page="20" density="compact" class="elevation-0" :loading="loading" v-model:page="page" return-object>
         <template v-slot:item.name="{ item }">
           <span class="text-primary font-weight-medium cursor-pointer" @click.stop="showPackageDetail(item)">{{
             item.name }}</span>
@@ -69,15 +85,16 @@
           <span class="text-medium-emphasis text-truncate" style="max-width: 300px;">{{ item.summary || '-' }}</span>
         </template>
         <template v-slot:item.actions="{ item }">
-          <v-btn size="x-small" color="success" variant="tonal" class="mr-1" @click="upgrade(item)" :disabled="loading">
-            升级
-          </v-btn>
-          <v-btn size="x-small" color="warning" variant="tonal" class="mr-1" @click="showVersionDialog(item)"
+          <v-btn size="small" color="warning" variant="tonal" class="mr-1" @click="showVersionDialog(item)"
             :disabled="loading">
             降级
           </v-btn>
-          <v-btn size="x-small" color="error" variant="tonal" @click="confirmUninstall(item)" :disabled="loading">
+          <v-btn size="small" color="error" variant="tonal" @click="confirmUninstall(item)" :disabled="loading">
             卸载
+          </v-btn>
+          <v-btn size="small" color="success" variant="tonal" class="ml-1" @click="upgrade(item)" :disabled="loading"
+            v-if="item.latest_version">
+            升级
           </v-btn>
         </template>
       </v-data-table>
@@ -88,20 +105,34 @@
       <v-card>
         <v-card-title>安装包</v-card-title>
         <v-card-text>
-          <v-text-field v-model="installForm.name" label="包名" placeholder="如 requests"
-            variant="outlined"></v-text-field>
-          <v-text-field v-model="installForm.version" label="版本 (可选)" variant="outlined"></v-text-field>
-          <v-checkbox v-model="installForm.upgrade" label="升级已存在的包"></v-checkbox>
+          <v-tabs v-model="installTab" density="compact">
+            <v-tab value="online">在线安装</v-tab>
+            <v-tab value="local">离线安装</v-tab>
+          </v-tabs>
+          <v-window v-model="installTab" class="mt-4">
+            <v-window-item value="online" class="pt-3">
+              <v-text-field v-model="installForm.name" label="包名" placeholder="如 requests"
+                variant="outlined"></v-text-field>
+              <v-text-field v-model="installForm.version" label="版本 (可选)" variant="outlined"></v-text-field>
+              <v-checkbox v-model="installForm.upgrade" label="升级已存在的包"></v-checkbox>
+            </v-window-item>
+            <v-window-item value="local" class="pt-3">
+              <v-file-input label="选择 wheel 或 tar.gz 文件" accept=".whl,.tar.gz" variant="outlined"
+                prepend-icon="mdi-file" @update:model-value="handleLocalFileSelect"
+                :loading="loadingLocalFile"></v-file-input>
+              <div v-if="localFileName" class="text-caption text-medium-emphasis">已选择: {{ localFileName }}</div>
+            </v-window-item>
+          </v-window>
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn variant="text" @click="showInstallDialog = false">取消</v-btn>
-          <v-btn color="primary" @click="install" :disabled="loading">安装</v-btn>
+          <v-btn color="primary" @click="handleInstall" :disabled="loading">安装</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
 
-    <v-dialog v-model="showVersionDialogFlag" max-width="500">
+    <v-dialog v-model="showVersionDialogFlag" max-width="500" scrollable>
       <v-card>
         <v-card-title>选择版本</v-card-title>
         <v-card-text>
@@ -152,7 +183,7 @@
               <v-list-item-title class="text-primary">主页</v-list-item-title>
               <v-list-item-subtitle>
                 <a :href="packageDetail.home - page" target="_blank" class="text-primary">{{ packageDetail.home - page
-                  }}</a>
+                }}</a>
               </v-list-item-subtitle>
             </v-list-item>
             <v-list-item v-if="packageDetail.requires - python">
@@ -163,27 +194,39 @@
               <v-list-item-title class="text-primary">关键词</v-list-item-title>
               <v-list-item-subtitle>{{ packageDetail.keywords }}</v-list-item-subtitle>
             </v-list-item>
+            <v-list-item v-if="packageDetail.requires && packageDetail.requires.length">
+              <v-list-item-title class="text-primary">依赖 ({{ packageDetail.requires.length }})<v-btn variant="text"
+                  size="x-small" color="primary" class="ml-2" @click="showAllDependencies = true">
+                  显示全部
+                </v-btn></v-list-item-title>
+              <v-list-item-subtitle>
+                <v-chip v-for="r in packageDetail.requires.slice(0, 10)" :key="r" size="x-small" class="mr-1 mb-1">{{ r
+                }}</v-chip>
+                <span v-if="packageDetail.requires.length > 10" class="text-caption">... +{{
+                  packageDetail.requires.length -
+                  10 }} more</span>
+              </v-list-item-subtitle>
+            </v-list-item>
             <v-list-item v-if="packageDetail.classifiers && packageDetail.classifiers.length">
               <v-list-item-title class="text-primary">分类</v-list-item-title>
               <div class="mt-2">
                 <v-chip v-for="c in packageDetail.classifiers" :key="c" size="x-small" class="mr-1 mb-1">{{ c
-                  }}</v-chip>
+                }}</v-chip>
               </div>
             </v-list-item>
             <v-list-item v-if="packageDetail.description">
               <v-list-item-title class="text-primary">描述</v-list-item-title>
               <v-card-text class="pa-2 text-caption" style="white-space: pre-wrap;">{{ packageDetail.description
-                }}</v-card-text>
+              }}</v-card-text>
             </v-list-item>
           </v-list>
         </v-card-text>
       </v-card>
     </v-dialog>
 
-    <v-dialog v-model="showUninstallDialog" max-width="400">
+    <v-dialog v-model="showUninstallDialog" max-width="400" scrollable>
       <v-card>
-        <v-card-title>卸载包</v-card-title>
-        <v-card-text>确定要卸载 <strong>{{ uninstallTarget?.name }}</strong> 吗？</v-card-text>
+        <v-card-title class="text-error">确定要卸载 <strong>{{ uninstallTarget?.name }}</strong> 吗？</v-card-title>
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn variant="text" @click="showUninstallDialog = false">取消</v-btn>
@@ -192,7 +235,25 @@
       </v-card>
     </v-dialog>
 
-    <v-dialog v-model="showConflictDialog" max-width="700">
+    <v-dialog v-model="showBatchUninstallDialog" max-width="400" scrollable>
+      <v-card>
+        <v-card-title class="text-error">
+          确定要卸载以下 <strong>{{ selectedPackages.length }}</strong> 个包吗？<br>
+        </v-card-title>
+        <v-card-text>
+          <v-chip label class="text-caption ma-1" v-for="x in selectedPackages">
+            {{ x.name }}
+          </v-chip>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn variant="text" @click="showBatchUninstallDialog = false">取消</v-btn>
+          <v-btn color="error" @click="batchUninstall" :loading="loading">卸载</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <v-dialog v-model="showConflictDialog" max-width="700" scrollable>
       <v-card>
         <v-card-title class="text-error">
           <v-icon color="error" class="mr-2">mdi-alert</v-icon>
@@ -200,7 +261,15 @@
         </v-card-title>
         <v-card-text>
           <pre class="bg-red-lighten-5 pa-4 rounded" style="white-space: pre-wrap; max-height: 400px; overflow: auto;">{{
-        conflictOutput }}</pre>
+            conflictOutput }}</pre>
+        </v-card-text>
+      </v-card>
+    </v-dialog>
+
+    <v-dialog v-model="showAllDependencies" max-width="600" scrollable>
+      <v-card :title="`${packageDetail?.name} 的依赖 (${packageDetail?.requires?.length || 0})`">
+        <v-card-text>
+          <v-chip v-for="r in packageDetail?.requires" :key="r" size="small" class="mr-1 mb-1">{{ r }}</v-chip>
         </v-card-text>
       </v-card>
     </v-dialog>
@@ -223,6 +292,7 @@ const headers = [
 
 const packages = ref([])
 const allPackages = ref([])
+const selectedPackages = ref([])
 const loading = ref(false)
 const page = ref(1)
 const search = ref('')
@@ -246,6 +316,7 @@ const availableVersions = ref([])
 const selectedVersion = ref('')
 
 const showUninstallDialog = ref(false)
+const showBatchUninstallDialog = ref(false)
 const uninstallTarget = ref(null)
 
 const showDetailDialog = ref(false)
@@ -253,6 +324,7 @@ const detailLoading = ref(false)
 const packageDetail = ref(null)
 
 const showConflictDialog = ref(false)
+const showAllDependencies = ref(false)
 const checkingUpdates = ref(false)
 const checkingPackage = ref('')
 
@@ -260,13 +332,17 @@ const pythonVersion = ref('')
 const pipVersion = ref('')
 const pipInstalled = ref(true)
 const installingPip = ref(false)
+const clearingCache = ref(false)
+const installTab = ref('online')
+const localFile = ref(null)
+const localFileName = ref('')
+const loadingLocalFile = ref(false)
 
 const statCards = computed(() => [
   { label: 'pip', value: pipInstalled.value ? (pipVersion.value || '-') : '未安装', icon: 'mdi-toolbox', color: pipInstalled.value ? 'primary' : 'error' },
-  { label: '已安装包', value: statsTotal.value, icon: 'mdi-package-variant', color: 'primary' },
   { label: '可升级', value: statsUpgradable.value, icon: 'mdi-check-circle', color: 'success' },
   { label: 'Python 版本', value: pythonVersion.value || '-', icon: 'mdi-language-python', color: 'info' },
-  { label: '依赖状态', value: hasConflict.value ? '冲突' : '正常', icon: hasConflict.value ? 'mdi-alert' : 'mdi-shield-check', color: hasConflict.value ? 'error' : 'success', clickable: hasConflict.value, onClick: () => showConflictDialog.value = true }
+  { label: '依赖状态', value: hasConflict.value ? '冲突' : '正常', icon: hasConflict.value ? 'mdi-alert' : 'mdi-shield-check', color: hasConflict.value ? 'error' : 'success', clickable: hasConflict.value, onClick: hasConflict.value ? () => showConflictDialog.value = true : undefined }
 ])
 
 let searchTimeout
@@ -311,20 +387,45 @@ const checkConflicts = async () => {
   }
 }
 
-const install = async () => {
-  if (!installForm.name) return showToast('请输入包名', 'error')
-  loading.value = true
-  showInstallDialog.value = false
-  const res = await packagesApi.install(installForm.name, installForm.version, installForm.upgrade)
-  if (res?.task_id) {
-    showToast(`安装任务已创建: ${installForm.name}`)
+const handleLocalFileSelect = (files) => {
+  if (files) {
+    localFile.value = Array.isArray(files) ? files[0] : files
+    localFileName.value = localFile.value?.name || ''
   } else {
-    showToast(res?.message || '安装失败', 'error')
+    localFile.value = null
+    localFileName.value = ''
   }
-  loading.value = false
-  installForm.name = ''
-  installForm.version = ''
-  installForm.upgrade = false
+}
+
+const handleInstall = async () => {
+  if (installTab.value === 'online') {
+    if (!installForm.name) return showToast('请输入包名', 'error')
+    loading.value = true
+    showInstallDialog.value = false
+    const res = await packagesApi.install(installForm.name, installForm.version, installForm.upgrade)
+    if (res?.task_id) {
+      showToast(`安装任务已创建: ${installForm.name}`)
+    } else {
+      showToast(res?.message || '安装失败', 'error')
+    }
+    loading.value = false
+    installForm.name = ''
+    installForm.version = ''
+    installForm.upgrade = false
+  } else {
+    if (!localFile.value) return showToast('请选择文件', 'error')
+    loading.value = true
+    showInstallDialog.value = false
+    const res = await packagesApi.installLocal(localFile.value)
+    if (res?.task_id) {
+      showToast(`安装任务已创建: ${localFileName.value}`)
+    } else {
+      showToast(res?.detail || '安装失败', 'error')
+    }
+    loading.value = false
+    localFile.value = null
+    localFileName.value = ''
+  }
 }
 
 const upgrade = async (pkg) => {
@@ -431,6 +532,23 @@ const uninstall = async () => {
   loading.value = false
 }
 
+const confirmBatchUninstall = () => {
+  showBatchUninstallDialog.value = true
+}
+
+const batchUninstall = async () => {
+  loading.value = true
+  showBatchUninstallDialog.value = false
+  const names = selectedPackages.value.map(p => p.name)
+  for (const name of names) {
+    await packagesApi.uninstall(name)
+  }
+  showToast(`${names.length} 个卸载任务已创建`)
+  selectedPackages.value = []
+  loading.value = false
+  loadPackages()
+}
+
 const exportPackages = () => {
   const lines = allPackages.value.map(pkg => {
     if (pkg.version) {
@@ -460,6 +578,17 @@ const installPip = async () => {
     showToast(res?.output || '安装失败', 'error')
   }
   installingPip.value = false
+}
+
+const clearCache = async () => {
+  clearingCache.value = true
+  const res = await packagesApi.clearCache()
+  if (res?.success) {
+    showToast('缓存已清理')
+  } else {
+    showToast(res?.message || '清理失败', 'error')
+  }
+  clearingCache.value = false
 }
 
 onMounted(loadPackages)

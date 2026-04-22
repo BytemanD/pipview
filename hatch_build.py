@@ -8,6 +8,8 @@ from hatchling.builders.hooks.plugin.interface import BuildHookInterface
 
 class CustomBuildHook(BuildHookInterface):
     def initialize(self, version, build_data):
+        if 'uv' in sys.argv and 'add' in sys.argv:
+            return
         root = Path(self.root)
         frontend_dir = root / "frontend"
         static_dir = root / "src" / "pipview" / "static"

@@ -49,11 +49,30 @@ export const packagesApi = {
   versions: (packageName) =>
     apiCall(`/packages/${packageName}/versions`),
 
+  dependencies: (packageName) =>
+    apiCall(`/packages/${packageName}/dependencies`),
+
   latestVersion: (packageName) =>
     apiCall(`/packages/search?q=${packageName}`),
 
   checkConflicts: () =>
     apiCall('/packages/conflicts'),
+
+  getCache: () =>
+    apiCall('/packages/cache'),
+
+  clearCache: () =>
+    apiCall('/packages/cache', { method: 'DELETE' }),
+
+  installLocal: async (file) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    const res = await fetch(`${API_BASE}/packages/install-local`, {
+      method: 'POST',
+      body: formData
+    })
+    return res.json()
+  },
 
   checkUpdates: () =>
     apiCall('/packages/updates')

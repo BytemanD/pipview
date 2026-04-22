@@ -3,7 +3,7 @@
 import sys
 from concurrent.futures import ThreadPoolExecutor
 
-from fastapi import APIRouter, BackgroundTasks, HTTPException, Query
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Query, UploadFile
 
 from pipview.common.pip_helper import ensure_pip, get_pip_command
 from pipview.core.pip_service import package_service
@@ -64,6 +64,88 @@ async def check_conflicts():
     return result
 
 
+@router.get("/cache")
+async def get_cache_info():
+    """获取 pip 缓存信息"""
+    import subprocess
+
+    try:
+        p = subprocess.run(
+            [sys.executable, "-m", "pip", "cache", "list", "--format=files"],
+            capture_output=True,
+            text=True,
+        )
+        files = p.stdout.strip().split('\n') if p.stdout.strip() else []
+        return {"count": len(files), "files": files[:20]}
+    except Exception as e:
+        return {"count": 0, "files": [], "error": str(e)}
+
+
+@router.delete("/cache")
+async def clear_cache():
+    """清理 pip 缓存"""
+    import subprocess
+
+    try:
+        p = subprocess.run(
+            [sys.executable, "-m", "pip", "cache", "purge"],
+            capture_output=True,
+            text=True,
+        )
+        if p.returncode == 0:
+            return {"success": True, "message": "缓存已清理"}
+        return {"success": False, "message": p.stderr or p.stdout}
+    except Exception as e:
+        return {"success": False, "message": str(e)}
+
+
+@router.post("/install-local")
+async def install_local(file: UploadFile, background_tasks: BackgroundTasks):
+    """从本地 wheel 文件安装"""
+    import tempfile
+    import os
+    import asyncio
+
+    suffix = ".whl" if file.filename.endswith(".whl") else ".tar.gz"
+    tmp_dir = tempfile.mkdtemp(prefix="pipview_")
+    tmp_path = os.path.join(tmp_dir, file.filename)
+
+    with open(tmp_path, "wb") as f:
+        content = await file.read()
+        f.write(content)
+
+    args = [sys.executable, "-m", "pip", "install", tmp_path]
+
+    task = task_manager.create_task(
+        name=f"安装本地包 {file.filename}",
+        package_name=file.filename,
+        task_type="install",
+    )
+
+    async def run_install():
+        try:
+            await task_manager.run_install_task(
+                task_id=task.task_id,
+                args=args,
+                package_name=file.filename,
+            )
+        finally:
+            try:
+                os.unlink(tmp_path)
+                os.rmdir(tmp_dir)
+            except:
+                pass
+
+    background_tasks.add_task(run_install)
+
+    return TaskResponse(
+        task_id=task.task_id,
+        status="pending",
+        message=f"本地安装任务已创建: {file.filename}",
+        output=None,
+    )
+
+
 @router.get("/{package_name}")
 async def get_package_info(package_name: str):
     """获取包详细信息"""
@@ -78,6 +160,13 @@ async def get_package_versions(package_name: str):
     """获取包所有可用版本"""
     versions = await package_service.get_package_versions(package_name)
     return {"versions": versions}
+
+
+@router.get("/{package_name}/dependencies")
+async def get_package_dependencies(package_name: str):
+    """获取包依赖"""
+    deps = package_service.get_package_dependencies(package_name)
+    return {"dependencies": deps}
 
 
 @router.post("")

@@ -108,6 +108,7 @@ def run(_app: Optional[str] = None, reload=False):
         host=CONF.app.host,
         port=CONF.app.port,
         reload=reload,
+        reload_excludes=[".venv"],
     )
 
 

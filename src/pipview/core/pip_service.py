@@ -58,9 +58,27 @@ class PackageService:
                 "classifiers": meta.get_all("Classifier") or [],
                 "keywords": meta.get("Keywords", ""),
                 "description": meta.get("Description", ""),
+                "requires": meta.get_all("Requires-Dist") or [],
             }
         except PackageNotFoundError:
             return {}
+
+    def get_package_dependencies(self, package_name: str) -> list[str]:
+        """获取包的依赖列表"""
+        try:
+            from importlib.metadata import PackageMetadata
+            meta = PackageMetadata.discover_from_distribution(package_name)
+            requires = meta.get_all("Requires-Dist") or []
+            deps = []
+            for r in requires:
+                import re
+                match = re.match(r'^([a-zA-Z0-9._-]+)', r)
+                if match:
+                    deps.append(match.group(1))
+            return deps
+        except Exception as e:
+            logger.error(f"Failed to get dependencies for {package_name}: {e}")
+            return []
 
     def search_packages(self, query: str, timeout: int = 30) -> list[dict]:
         """搜索包 (使用 PyPI API)"""

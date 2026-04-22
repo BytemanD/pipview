@@ -134,6 +134,7 @@ class TaskManager:
             if status == 0:
                 self.complete_task(task_id, TaskStatus.SUCCESS, result={"package": package_name})
             else:
+                logger.error(f"Task {task_id} failed: {stdout}")
                 error_msg = "\n".join(output_lines[-10:]) if output_lines else "Installation failed"
                 self.complete_task(task_id, TaskStatus.FAILED, error=error_msg)
         except Exception as e:
