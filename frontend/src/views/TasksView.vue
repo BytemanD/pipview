@@ -3,7 +3,9 @@
     <v-card>
       <v-card-title class="d-flex align-center flex-wrap ga-3">
         <span>安装任务</span>
-        <v-chip size="small" variant="outlined" color="primary">{{ activeTasks.length }}</v-chip>
+        <v-chip size="small" variant="outlined" color="primary">{{
+          activeTasks.length
+        }}</v-chip>
         <v-spacer></v-spacer>
         <v-btn color="primary" variant="text" size="small" @click="refreshTasks">
           <v-icon start>mdi-refresh</v-icon>
@@ -59,72 +61,74 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
-import { tasksApi } from '@/api'
+import { ref, onMounted, onUnmounted } from "vue";
+import { tasksApi } from "@/api";
 
-const activeTasks = ref([])
-const historyTasks = ref([])
-let refreshInterval = null
+const activeTasks = ref([]);
+const historyTasks = ref([]);
+let refreshInterval = null;
 
 const historyHeaders = [
-  { title: '任务', key: 'name' },
-  { title: '状态', key: 'status' },
-  { title: '时间', key: 'created_at' },
-  { title: '包', key: 'package_name' }
-]
+  { title: "任务", key: "name" },
+  { title: "状态", key: "status" },
+  { title: "时间", key: "created_at" },
+  { title: "包", key: "package_name" },
+];
 
 const getStatusColor = (status) => {
   const colors = {
-    pending: 'warning',
-    running: 'primary',
-    success: 'success',
-    failed: 'error',
-    cancelled: 'grey'
-  }
-  return colors[status] || 'grey'
-}
+    pending: "warning",
+    running: "primary",
+    success: "success",
+    failed: "error",
+    cancelled: "grey",
+  };
+  return colors[status] || "grey";
+};
 
 const getStatusText = (status) => {
   const texts = {
-    pending: '等待中',
-    running: '运行中',
-    success: '成功',
-    failed: '失败',
-    cancelled: '已取消'
-  }
-  return texts[status] || status
-}
+    pending: "等待中",
+    running: "运行中",
+    success: "成功",
+    failed: "失败",
+    cancelled: "已取消",
+  };
+  return texts[status] || status;
+};
 
 const formatTime = (timeStr) => {
-  if (!timeStr) return '-'
-  const date = new Date(timeStr)
-  return date.toLocaleString('zh-CN')
-}
+  if (!timeStr) return "-";
+  const date = new Date(timeStr);
+  return date.toLocaleString("zh-CN");
+};
 
 const loadTasks = async () => {
-  const activeRes = await tasksApi.active()
+  const activeRes = await tasksApi.active();
   if (activeRes?.tasks) {
-    activeTasks.value = activeRes.tasks
+    activeTasks.value = activeRes.tasks;
   }
 
-  const historyRes = await tasksApi.list('', 20)
+  const historyRes = await tasksApi.list("", 20);
   if (historyRes?.tasks) {
-    historyTasks.value = historyRes.tasks.filter(t => t.status !== 'running' && t.status !== 'pending')
+    historyTasks.value = historyRes.tasks.filter(
+      (t) => t.status !== "running" && t.status !== "pending",
+    );
   }
-}
+};
 
 const refreshTasks = () => {
-  loadTasks()
-}
+  loadTasks();
+};
 
 onMounted(() => {
-  loadTasks()
-  refreshInterval = setInterval(loadTasks, 2000)
-})
+  loadTasks();
+  refreshInterval = setInterval(loadTasks, 2000);
+});
 
 onUnmounted(() => {
   if (refreshInterval) {
-    clearInterval(refreshInterval)
+    clearInterval(refreshInterval);
   }
-})
+});
 </script>

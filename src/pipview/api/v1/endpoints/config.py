@@ -14,6 +14,7 @@ router = APIRouter(prefix="/configs", tags=["configs"])
 
 def read_pip_config() -> Optional[str]:
     """读取 pip 配置文件原始内容"""
+    a = 1
     if os.name == "nt":
         pip_dir = Path(os.environ.get("APPDATA", "")) / "pip"
     else:

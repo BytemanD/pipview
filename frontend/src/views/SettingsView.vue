@@ -15,19 +15,22 @@
 </template>
 
 <script setup>
-import { ref, inject, onMounted } from 'vue'
-import { configApi } from '@/api'
+import { ref, inject, onMounted } from "vue";
+import { configApi } from "@/api";
 
-const showToast = inject('showToast')
-const tab = ref('pip')
-const pipConfig = ref('')
-const envConfig = ref('')
+const showToast = inject("showToast");
+const tab = ref("pip");
+const pipConfig = ref("");
+const envConfig = ref("");
 
 const loadConfig = async () => {
-  const [pipRes, envRes] = await Promise.all([configApi.pip(), configApi.env()])
-  pipConfig.value = pipRes?.content || '未找到配置文件'
-  envConfig.value = envRes?.content || '无环境变量'
-}
+  const [pipRes, envRes] = await Promise.all([
+    configApi.pip(),
+    configApi.env(),
+  ]);
+  pipConfig.value = pipRes?.content || "未找到配置文件";
+  envConfig.value = envRes?.content || "无环境变量";
+};
 
-onMounted(loadConfig)
+onMounted(loadConfig);
 </script>
