@@ -1,9 +1,12 @@
 """包管理 API 端点"""
 
+import os
 import sys
+import tempfile
 from concurrent.futures import ThreadPoolExecutor
 
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Query, UploadFile
+from loguru import logger
 
 from pipview.common.pip_helper import ensure_pip, get_pip_command
 from pipview.core.pip_service import package_service
@@ -75,7 +78,7 @@ async def get_cache_info():
             capture_output=True,
             text=True,
         )
-        files = p.stdout.strip().split('\n') if p.stdout.strip() else []
+        files = p.stdout.strip().split("\n") if p.stdout.strip() else []
         return {"count": len(files), "files": files[:20]}
     except Exception as e:
         return {"count": 0, "files": [], "error": str(e)}
@@ -102,11 +105,7 @@ async def clear_cache():
 @router.post("/install-local")
 async def install_local(file: UploadFile, background_tasks: BackgroundTasks):
     """从本地 wheel 文件安装"""
-    import tempfile
-    import os
-    import asyncio
 
-    suffix = ".whl" if file.filename.endswith(".whl") else ".tar.gz"
     tmp_dir = tempfile.mkdtemp(prefix="pipview_")
     tmp_path = os.path.join(tmp_dir, file.filename)
 
@@ -133,7 +132,8 @@ async def install_local(file: UploadFile, background_tasks: BackgroundTasks):
             try:
                 os.unlink(tmp_path)
                 os.rmdir(tmp_dir)
-            except:
+            except Exception:
+                logger.warning()
                 pass
 
     background_tasks.add_task(run_install)
@@ -200,6 +200,7 @@ async def install_package(request: InstallRequest, background_tasks: BackgroundT
             args=args,
             package_name=request.package_name,
         )
+
     background_tasks.add_task(run_install)
 
     return TaskResponse(
@@ -251,6 +252,7 @@ async def upgrade_all_packages(background_tasks: BackgroundTasks):
 
     async def run_upgrade_all():
         import subprocess
+
         task_manager.update_task(task.task_id, status="running", started_at=task.started_at, progress=0)
         task_manager.append_output(task.task_id, "检查可升级的包...\n")
 
@@ -261,6 +263,7 @@ async def upgrade_all_packages(background_tasks: BackgroundTasks):
                 return False, "检查可升级包失败"
 
             import json
+
             try:
                 outdated = json.loads(p.stdout)
             except json.JSONDecodeError:

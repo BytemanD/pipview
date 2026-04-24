@@ -30,7 +30,7 @@ class PackageService:
                     }
                     all_packages.append(pkg_info)
                 except Exception as e:
-                    logger.warning(f"Failed to get info for {name}: {e}")
+                    logger.warning("Failed to get info for {}: {}", name, e)
 
         if search:
             search_lower = search.lower()
@@ -67,17 +67,19 @@ class PackageService:
         """获取包的依赖列表"""
         try:
             from importlib.metadata import PackageMetadata
+
             meta = PackageMetadata.discover_from_distribution(package_name)
             requires = meta.get_all("Requires-Dist") or []
             deps = []
             for r in requires:
                 import re
-                match = re.match(r'^([a-zA-Z0-9._-]+)', r)
+
+                match = re.match(r"^([a-zA-Z0-9._-]+)", r)
                 if match:
                     deps.append(match.group(1))
             return deps
         except Exception as e:
-            logger.error(f"Failed to get dependencies for {package_name}: {e}")
+            logger.error("Failed to get dependencies for {}: {}", package_name, e)
             return []
 
     def search_packages(self, query: str, timeout: int = 30) -> list[dict]:
@@ -100,7 +102,7 @@ class PackageService:
                     }
                 ]
         except Exception as e:
-            logger.error(f"Failed to search packages: {e}")
+            logger.error("Failed to search packages: {}", e)
         return []
 
     async def install_package(
@@ -124,7 +126,7 @@ class PackageService:
         if extra_args:
             args.extend(extra_args.split())
 
-        logger.info(f"Running: {' '.join(args)}")
+        logger.info("Running: {}", " ".join(args))
 
         try:
             p = subprocess.run(
@@ -136,7 +138,7 @@ class PackageService:
             output = p.stdout + p.stderr if not success else p.stdout
             return success, output
         except Exception as e:
-            logger.error(f"Failed to install package: {e}")
+            logger.error("Failed to install package: {}", e)
             return False, str(e)
 
     async def uninstall_package(self, package_name: str, force: bool = True) -> tuple[bool, str]:
@@ -144,7 +146,7 @@ class PackageService:
         args = [sys.executable, "-m", "pip", "uninstall", "-y"]
         args.append(package_name)
 
-        logger.info(f"Running: {' '.join(args)}")
+        logger.info("Running: {}", " ".join(args))
 
         try:
             p = subprocess.run(
@@ -156,7 +158,7 @@ class PackageService:
             output = p.stdout + p.stderr if not success else p.stdout
             return success, output
         except Exception as e:
-            logger.error(f"Failed to uninstall package: {e}")
+            logger.error("Failed to uninstall package: {}", e)
             return False, str(e)
 
     async def upgrade_package(self, package_name: str) -> tuple[bool, str]:
@@ -185,21 +187,21 @@ class PackageService:
             package_names = [pkg["name"] for pkg in outdated]
             upgrade_args = [sys.executable, "-m", "pip", "install", "--upgrade"] + package_names
 
-            logger.info(f"Running: {' '.join(upgrade_args)}")
+            logger.info("Running: {}", " ".join(upgrade_args))
 
             p = subprocess.run(upgrade_args, capture_output=True, text=True)
             success = p.returncode == 0
             output = p.stdout + p.stderr if not success else p.stdout
             return success, output
         except Exception as e:
-            logger.error(f"Failed to upgrade packages: {e}")
+            logger.error("Failed to upgrade packages: {}", e)
             return False, str(e)
 
     async def downgrade_package(self, package_name: str, version: str) -> tuple[bool, str]:
         """降级包到指定版本"""
         args = [sys.executable, "-m", "pip", "install", "--force-reinstall", f"{package_name}=={version}"]
 
-        logger.info(f"Running: {' '.join(args)}")
+        logger.info("Running: {}", " ".join(args))
 
         try:
             p = subprocess.run(args, capture_output=True, text=True)
@@ -207,7 +209,7 @@ class PackageService:
             output = p.stdout + p.stderr if not success else p.stdout
             return success, output
         except Exception as e:
-            logger.error(f"Failed to downgrade package: {e}")
+            logger.error("Failed to downgrade package: {}", e)
             return False, str(e)
 
     async def check_conflicts(self) -> dict:
@@ -221,7 +223,7 @@ class PackageService:
 
             return {"ok": False, "output": p.stdout.strip() + p.stderr.strip()}
         except Exception as e:
-            logger.error(f"Failed to check conflicts: {e}")
+            logger.error("Failed to check conflicts: {}", e)
             return {"ok": True, "output": "", "error": str(e)}
 
     async def get_package_versions(self, package_name: str) -> list[str]:
@@ -235,7 +237,7 @@ class PackageService:
             )
             return versions
         except Exception as e:
-            logger.error(f"Failed to get versions: {e}")
+            logger.error("Failed to get versions: {}", e)
             return []
 
 

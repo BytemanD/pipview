@@ -29,6 +29,9 @@ const vuetify = createVuetify({
     },
     VCard: {
       elevation: 2,
+    },
+    VSelect: {
+      density: 'comfortable',
     }
   }
 })

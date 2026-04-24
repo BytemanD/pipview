@@ -91,8 +91,8 @@ export const sourcesApi = {
       body: JSON.stringify({ name, url })
     }),
 
-  remove: (url) =>
-    apiCall(`/sources/${encodeURIComponent(url)}`, {
+  remove: (name) =>
+    apiCall(`/sources/${name}`, {
       method: 'DELETE'
     }),
 

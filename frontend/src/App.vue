@@ -1,6 +1,6 @@
 <template>
   <v-app>
-    <v-navigation-drawer permanent rail expand-on-hover>
+    <v-navigation-drawer permanent expand-on-hover width="180">
       <v-list-item class="px-2 py-4" nav>
         <template v-slot:prepend>
           <v-icon size="32" color="primary">mdi-package-variant</v-icon>
@@ -67,7 +67,7 @@ const currentTab = ref('packages')
 
 const navItems = [
   { title: '包管理', icon: 'mdi-package-variant', value: 'packages' },
-  { title: '源管理', icon: 'mdi-web', value: 'sources' },
+  { title: 'PyPi源', icon: 'mdi-web', value: 'sources' },
   { title: '设置', icon: 'mdi-cog', value: 'settings' }
 ]
 

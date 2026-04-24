@@ -15,6 +15,7 @@ logger = get_logger()
 
 class TaskStatus(str, Enum):
     """任务状态"""
+
     PENDING = "pending"
     RUNNING = "running"
     SUCCESS = "success"
@@ -25,6 +26,7 @@ class TaskStatus(str, Enum):
 @dataclass
 class Task:
     """任务"""
+
     task_id: str
     name: str
     status: TaskStatus = TaskStatus.PENDING
@@ -60,7 +62,7 @@ class TaskManager:
         )
         with self._lock:
             self._tasks[task_id] = task
-        logger.info(f"Task created: {task_id} - {name}")
+        logger.info("Task created: {} - {}", task_id, name)
         return task
 
     def get_task(self, task_id: str) -> Optional[Task]:
@@ -114,7 +116,7 @@ class TaskManager:
             task.finished_at = datetime.now()
             task.result = result
             task.error = error
-            logger.info(f"Task completed: {task_id} - status={status.value}")
+            logger.info("Task completed: {} - status={}", task_id, status.value)
             return True
 
     async def run_install_task(
@@ -126,6 +128,7 @@ class TaskManager:
     ) -> tuple[bool, str]:
         """在后台运行安装任务"""
         import subprocess
+
         self.update_task(task_id, status=TaskStatus.RUNNING, started_at=datetime.now(), progress=0)
         self.append_output(task_id, f"Starting installation of {package_name}...\n")
         output_lines = []
@@ -134,11 +137,11 @@ class TaskManager:
             if status == 0:
                 self.complete_task(task_id, TaskStatus.SUCCESS, result={"package": package_name})
             else:
-                logger.error(f"Task {task_id} failed: {stdout}")
+                logger.error("Task {} failed: {}", task_id, stdout)
                 error_msg = "\n".join(output_lines[-10:]) if output_lines else "Installation failed"
                 self.complete_task(task_id, TaskStatus.FAILED, error=error_msg)
         except Exception as e:
-            logger.error(f"Task {task_id} failed: {e}")
+            logger.error("Task {} failed: {}", task_id, e)
             self.complete_task(task_id, TaskStatus.FAILED, error=str(e))
             return False, str(e)
         finally:

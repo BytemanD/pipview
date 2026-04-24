@@ -5,8 +5,8 @@ from typing import Optional
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from pipview.core.source_service import source_service
 from pipview.core.schemas import SourceInfo, SourceListResponse
+from pipview.core.source_service import source_service
 
 router = APIRouter(prefix="/sources", tags=["sources"])
 
@@ -50,7 +50,8 @@ async def get_current_source():
     """获取当前使用的源"""
     config = source_service.get_pip_config()
     current = config.get("index-url", "https://pypi.org/simple")
-    return {"current": current}
+    extra = config.get("extra-index-url")
+    return {"index-url": current, "extra-index-url": extra.split() if extra else None}
 
 
 @router.put("/current")
@@ -80,10 +81,10 @@ async def add_source(request: AddSourceRequest):
     return {"message": "Source added successfully"}
 
 
-@router.delete("/{url}")
-async def remove_source(url: str):
+@router.delete("/{name}")
+async def remove_source(name: str):
     """移除额外源"""
-    success = source_service.remove_source(url)
+    success = source_service.remove_source(name)
     if not success:
         raise HTTPException(status_code=500, detail="Failed to remove source")
     return {"message": "Source removed successfully"}

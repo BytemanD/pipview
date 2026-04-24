@@ -78,6 +78,7 @@ async def get_pip_version():
     """获取 pip 版本"""
     try:
         import pip
+
         return {"version": pip.__version__, "installed": True}
     except ImportError:
         return {"version": None, "installed": False}
@@ -96,6 +97,7 @@ async def install_pip():
         )
         if p.returncode == 0:
             import pip
+
             return {"success": True, "version": pip.__version__}
         return {"success": False, "output": p.stdout + p.stderr}
     except Exception as e:

@@ -17,7 +17,7 @@
               安装
             </v-btn>
             <v-btn v-if="stat.label === 'pip' && pipInstalled" color="warning" variant="text" size="small"
-              @click.stop="installPip" :loading="installingPip">
+              @click.stop="clearCache" :loading="clearingCache">
               清理缓存
             </v-btn>
           </div>
@@ -340,7 +340,7 @@ const loadingLocalFile = ref(false)
 
 const statCards = computed(() => [
   { label: 'pip', value: pipInstalled.value ? (pipVersion.value || '-') : '未安装', icon: 'mdi-toolbox', color: pipInstalled.value ? 'primary' : 'error' },
-  { label: '可升级', value: statsUpgradable.value, icon: 'mdi-check-circle', color: 'success' },
+  { label: '可升级', value: statsUpgradable.value, icon: 'mdi-star', color: 'success' },
   { label: 'Python 版本', value: pythonVersion.value || '-', icon: 'mdi-language-python', color: 'info' },
   { label: '依赖状态', value: hasConflict.value ? '冲突' : '正常', icon: hasConflict.value ? 'mdi-alert' : 'mdi-shield-check', color: hasConflict.value ? 'error' : 'success', clickable: hasConflict.value, onClick: hasConflict.value ? () => showConflictDialog.value = true : undefined }
 ])
@@ -584,7 +584,7 @@ const clearCache = async () => {
   clearingCache.value = true
   const res = await packagesApi.clearCache()
   if (res?.success) {
-    showToast('缓存已清理')
+    showToast('pip 缓存已清理')
   } else {
     showToast(res?.message || '清理失败', 'error')
   }

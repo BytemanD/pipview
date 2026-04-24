@@ -40,10 +40,10 @@ def install_pip() -> bool:
             logger.info(" pip installed successfully")
             return True
         else:
-            logger.error(f"Failed to install pip: {result.stderr}")
+            logger.error("Failed to install pip: {}", result.stderr)
             return False
     except Exception as e:
-        logger.error(f"Error installing pip: {e}")
+        logger.error("Error installing pip: {}", e)
         return False
 
 

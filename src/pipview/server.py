@@ -67,7 +67,7 @@ app.add_middleware(
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     """全局异常处理"""
-    logger.error(f"Unhandled exception: {exc}")
+    logger.error("Unhandled exception: {}", exc)
     return JSONResponse(
         status_code=500,
         content={

@@ -2,6 +2,7 @@
 
 import configparser
 import os
+import urllib.parse
 from pathlib import Path
 from typing import Optional
 
@@ -68,7 +69,7 @@ class SourceService:
         index_url = config.get("index-url", "https://pypi.org/simple")
         sources.append(
             {
-                "name": "主源",
+                "name": "index-url",
                 "url": index_url,
                 "priority": 1,
                 "enabled": True,
@@ -78,10 +79,9 @@ class SourceService:
         if "extra-index-url" in config:
             extra_urls = config["extra-index-url"].split()
             for i, url in enumerate(extra_urls):
-                name = self._guess_source_name(url)
                 sources.append(
                     {
-                        "name": name,
+                        "name": "extra-index-url",
                         "url": url,
                         "priority": i + 2,
                         "enabled": True,
@@ -115,18 +115,31 @@ class SourceService:
 
             config.set("global", "index-url", source_url)
 
+            if source_url.startswith("http://"):
+                parsed = urllib.parse.urlparse(source_url)
+                config.set("global", "trusted-host", parsed.netloc)
+            elif config.has_option("global", "trusted-host"):
+                config.remove_option("global", "trusted-host")
+
             if extra_sources:
                 config.set("global", "extra-index-url", "\n".join(extra_sources))
+                for url in extra_sources:
+                    if url.startswith("http://"):
+                        parsed = urllib.parse.urlparse(url)
+                        current_trusted = config.get("global", "trusted-host", "").split()
+                        if parsed.netloc not in current_trusted:
+                            current_trusted.append(parsed.netloc)
+                        config.set("global", "trusted-host", " ".join(current_trusted))
             elif config.has_option("global", "extra-index-url"):
                 config.remove_option("global", "extra-index-url")
 
             with open(self.pip_config_file, "w", encoding="utf-8") as f:
                 config.write(f)
 
-            logger.info(f"Set pip source to: {source_url}")
+            logger.info("Set pip source to: {}", source_url)
             return True
         except Exception as e:
-            logger.error(f"Failed to set pip source: {e}")
+            logger.error("Failed to set pip source: {}", e)
             return False
 
     def add_source(self, name: str, url: str) -> bool:
@@ -147,16 +160,23 @@ class SourceService:
             extra_urls.append(url)
             config.set("global", "extra-index-url", "\n".join(extra_urls))
 
+            if url.startswith("http://"):
+                parsed = urllib.parse.urlparse(url)
+                current_trusted = config.get("global", "trusted-host", "").split()
+                if parsed.netloc not in current_trusted:
+                    current_trusted.append(parsed.netloc)
+                config.set("global", "trusted-host", " ".join(current_trusted))
+
             with open(self.pip_config_file, "w", encoding="utf-8") as f:
                 config.write(f)
 
-            logger.info(f"Added pip source: {name} -> {url}")
+            logger.info("Added pip source: {} -> {}", name, url)
             return True
         except Exception as e:
-            logger.error(f"Failed to add pip source: {e}")
+            logger.error("Failed to add pip source: {}", e)
             return False
 
-    def remove_source(self, url: str) -> bool:
+    def remove_source(self, name: str) -> bool:
         """移除额外源"""
         try:
             config = configparser.ConfigParser()
@@ -167,22 +187,16 @@ class SourceService:
             if not config.has_section("global"):
                 return True
 
-            if config.has_option("global", "extra-index-url"):
-                extra_urls = config.get("global", "extra-index-url").split()
-                extra_urls = [u for u in extra_urls if u != url]
-
-                if extra_urls:
-                    config.set("global", "extra-index-url", "\n".join(extra_urls))
-                else:
-                    config.remove_option("global", "extra-index-url")
-
+            if config.has_option("global", name):
+                config.get("global", name).split()
+                config.remove_option("global", name)
                 with open(self.pip_config_file, "w", encoding="utf-8") as f:
                     config.write(f)
 
-            logger.info(f"Removed pip source: {url}")
+            logger.info("Removed pip source: {}", name)
             return True
         except Exception as e:
-            logger.error(f"Failed to remove pip source: {e}")
+            logger.error("Failed to remove pip source: {}", e)
             return False
 
     def reset_to_default(self) -> bool:
@@ -193,7 +207,7 @@ class SourceService:
             logger.info("Reset pip source to default")
             return True
         except Exception as e:
-            logger.error(f"Failed to reset pip source: {e}")
+            logger.error("Failed to reset pip source: {}", e)
             return False
 
 
